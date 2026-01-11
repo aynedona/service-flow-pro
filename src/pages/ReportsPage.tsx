@@ -100,155 +100,162 @@ export default function ReportsPage() {
         <DesktopHeader title="Relatórios" />
       </div>
 
-      <div className="content-container lg:max-w-2xl">
-        {/* Filters */}
-        <div className="card-elevated p-6 mb-6 animate-fade-in">
-          <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
-            Filtros do Relatório
-          </h3>
+      <div className="content-container">
+        <div className="lg:grid lg:grid-cols-3 lg:gap-6">
+          {/* Filters */}
+          <div className="lg:col-span-1">
+            <div className="card-elevated p-6 mb-6 lg:mb-0 animate-fade-in">
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Filtros do Relatório
+              </h3>
 
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Mês</Label>
-                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {months.map((month) => (
-                      <SelectItem key={month.value} value={month.value}>
-                        {month.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Mês</Label>
+                    <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {months.map((month) => (
+                          <SelectItem key={month.value} value={month.value}>
+                            {month.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              <div className="space-y-2">
-                <Label>Ano</Label>
-                <Select value={selectedYear} onValueChange={setSelectedYear}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {years.map((year) => (
-                      <SelectItem key={year} value={year}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+                  <div className="space-y-2">
+                    <Label>Ano</Label>
+                    <Select value={selectedYear} onValueChange={setSelectedYear}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {years.map((year) => (
+                          <SelectItem key={year} value={year}>
+                            {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
 
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <User className="w-4 h-4" />
-                Cliente
-              </Label>
-              <Select value={selectedClient} onValueChange={setSelectedClient}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-
-        {/* Preview */}
-        <div className="card-elevated p-6 mb-6 animate-slide-up" style={{ animationDelay: "0.1s" }}>
-          <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Prévia do Relatório
-          </h3>
-
-          <div className="bg-secondary/50 rounded-lg p-4">
-            <div className="text-center mb-4">
-              <h4 className="text-lg font-bold text-foreground">Relatório de Ordens de Serviço</h4>
-              <p className="text-sm text-muted-foreground">
-                {getMonthName(selectedMonth)} de {selectedYear}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {getClientName(selectedClient)}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div className="bg-card p-3 rounded-lg">
-                <p className="text-2xl font-bold text-primary">12</p>
-                <p className="text-xs text-muted-foreground">Ordens</p>
-              </div>
-              <div className="bg-card p-3 rounded-lg">
-                <p className="text-2xl font-bold text-status-finished">R$ 3.420</p>
-                <p className="text-xs text-muted-foreground">Faturamento</p>
-              </div>
-              <div className="bg-card p-3 rounded-lg">
-                <p className="text-2xl font-bold text-status-progress">8</p>
-                <p className="text-xs text-muted-foreground">Finalizadas</p>
-              </div>
-              <div className="bg-card p-3 rounded-lg">
-                <p className="text-2xl font-bold text-status-waiting">4</p>
-                <p className="text-xs text-muted-foreground">Pendentes</p>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Cliente
+                  </Label>
+                  <Select value={selectedClient} onValueChange={setSelectedClient}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Export Options */}
-        <div className="card-elevated p-6 animate-slide-up" style={{ animationDelay: "0.2s" }}>
-          <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-            <Download className="w-5 h-5" />
-            Exportar Relatório
-          </h3>
+          {/* Preview & Export */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Preview */}
+            <div className="card-elevated p-6 animate-slide-up" style={{ animationDelay: "0.1s" }}>
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Prévia do Relatório
+              </h3>
 
-          <div className="space-y-3">
-            <Button
-              onClick={handleExportPDF}
-              className="w-full justify-start"
-              variant="outline"
-              disabled={isGenerating}
-            >
-              <File className="w-5 h-5 mr-3 text-red-500" />
-              <div className="text-left">
-                <p className="font-medium">Exportar PDF</p>
-                <p className="text-xs text-muted-foreground">Documento formatado para impressão</p>
+              <div className="bg-secondary/50 rounded-lg p-4">
+                <div className="text-center mb-4">
+                  <h4 className="text-lg font-bold text-foreground">Relatório de Ordens de Serviço</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {getMonthName(selectedMonth)} de {selectedYear}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {getClientName(selectedClient)}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
+                  <div className="bg-card p-3 rounded-lg">
+                    <p className="text-2xl font-bold text-primary">12</p>
+                    <p className="text-xs text-muted-foreground">Ordens</p>
+                  </div>
+                  <div className="bg-card p-3 rounded-lg">
+                    <p className="text-2xl font-bold text-status-finished">R$ 3.420</p>
+                    <p className="text-xs text-muted-foreground">Faturamento</p>
+                  </div>
+                  <div className="bg-card p-3 rounded-lg">
+                    <p className="text-2xl font-bold text-status-progress">8</p>
+                    <p className="text-xs text-muted-foreground">Finalizadas</p>
+                  </div>
+                  <div className="bg-card p-3 rounded-lg">
+                    <p className="text-2xl font-bold text-status-waiting">4</p>
+                    <p className="text-xs text-muted-foreground">Pendentes</p>
+                  </div>
+                </div>
               </div>
-            </Button>
+            </div>
 
-            <Button
-              onClick={handleExportExcel}
-              className="w-full justify-start"
-              variant="outline"
-              disabled={isGenerating}
-            >
-              <FileSpreadsheet className="w-5 h-5 mr-3 text-green-600" />
-              <div className="text-left">
-                <p className="font-medium">Exportar Excel</p>
-                <p className="text-xs text-muted-foreground">Planilha com dados detalhados</p>
-              </div>
-            </Button>
+            {/* Export Options */}
+            <div className="card-elevated p-6 animate-slide-up" style={{ animationDelay: "0.2s" }}>
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Download className="w-5 h-5" />
+                Exportar Relatório
+              </h3>
 
-            <Button
-              onClick={handleSendEmail}
-              className="w-full justify-start"
-              variant="outline"
-              disabled={isGenerating}
-            >
-              <Mail className="w-5 h-5 mr-3 text-primary" />
-              <div className="text-left">
-                <p className="font-medium">Enviar por Email</p>
-                <p className="text-xs text-muted-foreground">Receba o relatório no seu email</p>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                <Button
+                  onClick={handleExportPDF}
+                  className="w-full justify-start"
+                  variant="outline"
+                  disabled={isGenerating}
+                >
+                  <File className="w-5 h-5 mr-3 text-red-500" />
+                  <div className="text-left">
+                    <p className="font-medium">Exportar PDF</p>
+                    <p className="text-xs text-muted-foreground">Documento formatado</p>
+                  </div>
+                </Button>
+
+                <Button
+                  onClick={handleExportExcel}
+                  className="w-full justify-start"
+                  variant="outline"
+                  disabled={isGenerating}
+                >
+                  <FileSpreadsheet className="w-5 h-5 mr-3 text-green-600" />
+                  <div className="text-left">
+                    <p className="font-medium">Exportar Excel</p>
+                    <p className="text-xs text-muted-foreground">Planilha detalhada</p>
+                  </div>
+                </Button>
+
+                <Button
+                  onClick={handleSendEmail}
+                  className="w-full justify-start"
+                  variant="outline"
+                  disabled={isGenerating}
+                >
+                  <Mail className="w-5 h-5 mr-3 text-primary" />
+                  <div className="text-left">
+                    <p className="font-medium">Enviar Email</p>
+                    <p className="text-xs text-muted-foreground">Receba por email</p>
+                  </div>
+                </Button>
               </div>
-            </Button>
+            </div>
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { TopNav } from "@/components/layout/TopNav";
+import { DesktopHeader } from "@/components/layout/DesktopHeader";
 import { Plus, Search, Phone, Mail, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,16 +34,34 @@ export default function ClientsPage() {
 
   return (
     <div className="page-container bg-background">
-      <TopNav
-        title="Clientes"
-        rightAction={
-          <Link to="/clientes/novo">
-            <Button size="icon" variant="ghost" className="text-primary hover:text-primary/80">
-              <Plus className="w-5 h-5" />
-            </Button>
-          </Link>
-        }
-      />
+      {/* Mobile Header */}
+      <div className="lg:hidden">
+        <TopNav
+          title="Clientes"
+          rightAction={
+            <Link to="/clientes/novo">
+              <Button size="icon" variant="ghost" className="text-primary hover:text-primary/80">
+                <Plus className="w-5 h-5" />
+              </Button>
+            </Link>
+          }
+        />
+      </div>
+
+      {/* Desktop Header */}
+      <div className="hidden lg:block">
+        <DesktopHeader 
+          title="Clientes" 
+          actions={
+            <Link to="/clientes/novo">
+              <Button className="btn-primary">
+                <Plus className="w-4 h-4 mr-2" />
+                Novo Cliente
+              </Button>
+            </Link>
+          }
+        />
+      </div>
 
       <div className="content-container">
         {/* Search */}
@@ -58,7 +77,7 @@ export default function ClientsPage() {
 
         {/* Client List */}
         {filteredClients.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-3 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-4 lg:space-y-0">
             {filteredClients.map((client, index) => (
               <Link
                 key={client.id}

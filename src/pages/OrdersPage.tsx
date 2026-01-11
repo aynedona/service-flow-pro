@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { TopNav } from "@/components/layout/TopNav";
+import { DesktopHeader } from "@/components/layout/DesktopHeader";
 import { Plus, Search, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,16 +50,34 @@ export default function OrdersPage() {
 
   return (
     <div className="page-container bg-background">
-      <TopNav
-        title="Ordens de Serviço"
-        rightAction={
-          <Link to="/ordens/nova">
-            <Button size="icon" variant="ghost" className="text-primary hover:text-primary/80">
-              <Plus className="w-5 h-5" />
-            </Button>
-          </Link>
-        }
-      />
+      {/* Mobile Header */}
+      <div className="lg:hidden">
+        <TopNav
+          title="Ordens de Serviço"
+          rightAction={
+            <Link to="/ordens/nova">
+              <Button size="icon" variant="ghost" className="text-primary hover:text-primary/80">
+                <Plus className="w-5 h-5" />
+              </Button>
+            </Link>
+          }
+        />
+      </div>
+
+      {/* Desktop Header */}
+      <div className="hidden lg:block">
+        <DesktopHeader 
+          title="Ordens de Serviço" 
+          actions={
+            <Link to="/ordens/nova">
+              <Button className="btn-primary">
+                <Plus className="w-4 h-4 mr-2" />
+                Nova Ordem
+              </Button>
+            </Link>
+          }
+        />
+      </div>
 
       <div className="content-container">
         {/* Search */}
@@ -74,7 +93,7 @@ export default function OrdersPage() {
 
         {/* Orders List */}
         {filteredOrders.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-3 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-4 lg:space-y-0">
             {filteredOrders.map((order, index) => (
               <Link
                 key={order.id}

@@ -102,7 +102,7 @@ export default function FinancialPage() {
         <DesktopHeader title="Financeiro" />
       </div>
 
-      <div className="content-container lg:max-w-4xl">
+      <div className="content-container">
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           <div className="card-elevated p-4 animate-fade-in">
@@ -154,109 +154,115 @@ export default function FinancialPage() {
           </div>
         </div>
 
-        {/* Add Payment Button */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-full btn-primary mb-6">
-              <Plus className="w-4 h-4 mr-2" />
-              Registrar Pagamento
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Registrar Pagamento</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label>Ordem de Serviço</Label>
-                <Select value={selectedOrder} onValueChange={setSelectedOrder}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma ordem" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {mockOrders.map((order) => (
-                      <SelectItem key={order.id} value={order.id}>
-                        #{order.id} - {order.clientName} (R$ {order.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        <div className="lg:grid lg:grid-cols-3 lg:gap-6">
+          {/* Add Payment Button */}
+          <div className="lg:col-span-1 mb-6 lg:mb-0">
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="w-full btn-primary">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Registrar Pagamento
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Registrar Pagamento</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <Label>Ordem de Serviço</Label>
+                    <Select value={selectedOrder} onValueChange={setSelectedOrder}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma ordem" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {mockOrders.map((order) => (
+                          <SelectItem key={order.id} value={order.id}>
+                            #{order.id} - {order.clientName} (R$ {order.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              <div className="space-y-2">
-                <Label>Valor Recebido (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0,00"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                />
-              </div>
+                  <div className="space-y-2">
+                    <Label>Valor Recebido (R$)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="0,00"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <Label>Data do Pagamento</Label>
-                <Input
-                  type="date"
-                  value={paymentDate}
-                  onChange={(e) => setPaymentDate(e.target.value)}
-                />
-              </div>
+                  <div className="space-y-2">
+                    <Label>Data do Pagamento</Label>
+                    <Input
+                      type="date"
+                      value={paymentDate}
+                      onChange={(e) => setPaymentDate(e.target.value)}
+                    />
+                  </div>
 
-              <Button onClick={handleAddPayment} className="w-full btn-primary">
-                Confirmar Pagamento
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Payment History */}
-        <div className="card-elevated animate-slide-up">
-          <div className="p-4 border-b border-border/50">
-            <h3 className="font-semibold text-foreground">Histórico de Pagamentos</h3>
+                  <Button onClick={handleAddPayment} className="w-full btn-primary">
+                    Confirmar Pagamento
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
-          <div className="divide-y divide-border/50">
-            {payments.length === 0 ? (
-              <div className="p-8 text-center">
-                <DollarSign className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-muted-foreground">Nenhum pagamento registrado</p>
+
+          {/* Payment History */}
+          <div className="lg:col-span-2">
+            <div className="card-elevated animate-slide-up">
+              <div className="p-4 border-b border-border/50">
+                <h3 className="font-semibold text-foreground">Histórico de Pagamentos</h3>
               </div>
-            ) : (
-              payments.map((payment) => (
-                <div key={payment.id} className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      payment.type === "received" ? "bg-status-finished/20" : "bg-status-waiting/20"
-                    }`}>
-                      <User className={`w-5 h-5 ${
-                        payment.type === "received" ? "text-status-finished" : "text-status-waiting"
-                      }`} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{payment.clientName}</p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>Ordem #{payment.orderId}</span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {formatDate(payment.date)}
-                        </span>
+              <div className="divide-y divide-border/50">
+                {payments.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <DollarSign className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="text-muted-foreground">Nenhum pagamento registrado</p>
+                  </div>
+                ) : (
+                  payments.map((payment) => (
+                    <div key={payment.id} className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          payment.type === "received" ? "bg-status-finished/20" : "bg-status-waiting/20"
+                        }`}>
+                          <User className={`w-5 h-5 ${
+                            payment.type === "received" ? "text-status-finished" : "text-status-waiting"
+                          }`} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{payment.clientName}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>Ordem #{payment.orderId}</span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {formatDate(payment.date)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className={`font-bold ${
+                          payment.type === "received" ? "text-status-finished" : "text-status-waiting"
+                        }`}>
+                          R$ {payment.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {payment.type === "received" ? "Recebido" : "Pendente"}
+                        </p>
                       </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <p className={`font-bold ${
-                      payment.type === "received" ? "text-status-finished" : "text-status-waiting"
-                    }`}>
-                      R$ {payment.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {payment.type === "received" ? "Recebido" : "Pendente"}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
