@@ -1,16 +1,20 @@
-import { Bell, User } from "lucide-react";
+import { Bell } from "lucide-react";
 import { Link } from "react-router-dom";
+import { ReactNode } from "react";
 
 interface DesktopHeaderProps {
   title: string;
+  actions?: ReactNode;
 }
 
-export function DesktopHeader({ title }: DesktopHeaderProps) {
+export function DesktopHeader({ title, actions }: DesktopHeaderProps) {
   return (
     <header className="hidden lg:flex items-center justify-between h-16 px-8 bg-card border-b border-border/50 w-full">
       <h1 className="text-lg font-semibold text-foreground">{title}</h1>
       
       <div className="flex items-center gap-4">
+        {actions}
+        
         <Link 
           to="/notificacoes"
           className="p-2 text-muted-foreground hover:text-foreground transition-colors"
