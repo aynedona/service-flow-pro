@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils";
-
-export type OrderStatus = "start" | "progress" | "waiting" | "cancelled" | "finished";
+import { OrderStatus } from "@/types";
 
 interface StatusBadgeProps {
   status: OrderStatus;
