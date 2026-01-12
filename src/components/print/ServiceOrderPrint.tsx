@@ -21,7 +21,7 @@ export function ServiceOrderPrint({ order }: ServiceOrderPrintProps) {
     };
 
     return (
-        <div className="w-[80mm] bg-white text-black p-4 font-mono text-base leading-tight mx-auto shadow-sm print:shadow-none print:w-[80mm] print:mx-0 print:p-2" style={{ printColorAdjust: "exact", WebkitPrintColorAdjust: "exact" }}>
+        <div className="w-[80mm] bg-white text-black p-4 font-mono text-base leading-tight mx-auto shadow-sm print:shadow-none print:w-full print:mx-0 print:p-0" style={{ printColorAdjust: "exact", WebkitPrintColorAdjust: "exact" }}>
             {/* Header */}
             <div className="text-center border-b-2 border-black pb-4 mb-4">
                 <div className="flex justify-center mb-2">
