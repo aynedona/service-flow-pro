@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { TopNav } from "@/components/layout/TopNav";
 import { DesktopHeader } from "@/components/layout/DesktopHeader";
@@ -12,10 +12,16 @@ import { AddressManager } from "@/components/client/AddressManager";
 import { Address } from "@/types";
 import { formatDocument, formatPhone } from "@/lib/formatters";
 
+import { useClients } from "@/hooks/useClients";
+import { useStorage } from "@/hooks/useStorage";
+
 export default function NewClientPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
+  const { createClient } = useClients();
+  const { uploadImage, isUploading } = useStorage();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [customFieldValues, setCustomFieldValues] = useState<CustomFieldValue[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
 
@@ -37,6 +43,26 @@ export default function NewClientPage() {
     }
   };
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const url = await uploadImage(file, "app-images");
+      if (url) {
+        setAvatarUrl(url);
+        toast({
+          title: "Imagem enviada",
+          description: "Avatar atualizado com sucesso.",
+        });
+      } else {
+        toast({
+          title: "Erro",
+          description: "Falha ao enviar imagem.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   const handleNext = () => {
     if (!formData.name || !formData.email) {
       toast({
@@ -51,16 +77,36 @@ export default function NewClientPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const customFieldsObject = customFieldValues.reduce((acc, curr) => ({
+        ...acc,
+        [curr.fieldId]: curr.value
+      }), {});
+
+      await createClient.mutateAsync({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        document: formData.document,
+        birthDate: formData.birthDate,
+        addresses: addresses,
+        customFields: customFieldsObject,
+        avatar: avatarUrl
+      });
+
       toast({
         title: "Cliente cadastrado!",
         description: `${formData.name} foi adicionado com sucesso.`,
       });
       navigate("/clientes");
-    }, 1000);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao cadastrar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -86,8 +132,28 @@ export default function NewClientPage() {
             <>
               <div className="space-y-4 animate-slide-up">
                 <div className="flex justify-center mb-6 lg:justify-start">
-                  <button type="button" className="w-24 h-24 rounded-full bg-secondary border-2 border-dashed border-border flex items-center justify-center hover:border-primary/50 transition-colors">
-                    <Camera className="w-8 h-8 text-muted-foreground" />
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-24 h-24 rounded-full bg-secondary border-2 border-dashed border-border flex items-center justify-center hover:border-primary/50 transition-colors overflow-hidden relative"
+                  >
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <Camera className="w-8 h-8 text-muted-foreground" />
+                    )}
+                    {isUploading && (
+                      <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
+                        <span className="text-xs font-bold">...</span>
+                      </div>
+                    )}
                   </button>
                 </div>
 
@@ -136,7 +202,7 @@ export default function NewClientPage() {
               <div className="space-y-4 animate-slide-up mt-4 lg:mt-0">
                 <div className="flex gap-3">
                   <Button type="button" variant="outline" onClick={() => setStep(1)} className="flex-1">Voltar</Button>
-                  <Button type="submit" className="flex-1 btn-primary" disabled={isLoading}>{isLoading ? "Salvando..." : "Cadastrar"}</Button>
+                  <Button type="submit" className="flex-1 btn-primary" disabled={createClient.isPending}>{createClient.isPending ? "Salvando..." : "Cadastrar"}</Button>
                 </div>
               </div>
             </>

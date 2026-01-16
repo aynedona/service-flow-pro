@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { TopNav } from "@/components/layout/TopNav";
 import { Camera } from "lucide-react";
@@ -7,51 +7,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+import { CustomFieldsRenderer, CustomFieldValue } from "@/components/form/CustomFieldsRenderer";
 
-interface Service {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-}
-
-const mockServices: Record<string, Service> = {
-  "1": {
-    id: "1",
-    name: "Manutenção Preventiva",
-    description: "Verificação geral e ajustes preventivos para garantir o bom funcionamento dos equipamentos e evitar problemas futuros.",
-    price: 150.0,
-  },
-  "2": {
-    id: "2",
-    name: "Instalação Elétrica",
-    description: "Instalação de pontos elétricos, tomadas, interruptores e fiação em geral, seguindo normas técnicas de segurança.",
-    price: 250.0,
-  },
-  "3": {
-    id: "3",
-    name: "Reparo Hidráulico",
-    description: "Conserto de vazamentos, desentupimento e manutenção de encanamentos, caixas d'água e sistemas hidráulicos.",
-    price: 180.0,
-  },
-  "4": {
-    id: "4",
-    name: "Pintura",
-    description: "Pintura de ambientes internos e externos com preparo de superfície, aplicação de massa e acabamento profissional.",
-    price: 350.0,
-  },
-  "5": {
-    id: "5",
-    name: "Montagem de Móveis",
-    description: "Montagem e instalação de móveis residenciais e comerciais, incluindo fixação em parede quando necessário.",
-    price: 120.0,
-  },
-};
+import { useServices } from "@/hooks/useServices";
+import { useStorage } from "@/hooks/useStorage";
 
 export default function EditServicePage() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const [isLoading, setIsLoading] = useState(false);
+  const { services, updateService } = useServices();
+  const { uploadImage, isUploading } = useStorage();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const service = services?.find(s => s.id === id);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -59,18 +27,27 @@ export default function EditServicePage() {
     price: "",
   });
 
+  const [customFieldValues, setCustomFieldValues] = useState<CustomFieldValue[]>([]);
+  const [imageUrl, setImageUrl] = useState<string>("");
+
   useEffect(() => {
-    if (id && mockServices[id]) {
-      const service = mockServices[id];
+    if (service) {
       setFormData({
         name: service.name,
-        description: service.description,
+        description: service.description || "",
         price: service.price.toString(),
       });
-    }
-  }, [id]);
+      setImageUrl(service.imageUrl || "");
 
-  const service = id ? mockServices[id] : null;
+      if (service.customFields) {
+        const values: CustomFieldValue[] = Object.entries(service.customFields).map(([key, value]) => ({
+          fieldId: key,
+          value: value as string | number | boolean
+        }));
+        setCustomFieldValues(values);
+      }
+    }
+  }, [service]);
 
   if (!service) {
     return (
@@ -89,6 +66,26 @@ export default function EditServicePage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const url = await uploadImage(file, "app-images");
+      if (url) {
+        setImageUrl(url);
+        toast({
+          title: "Imagem enviada",
+          description: "Imagem atualizada com sucesso.",
+        });
+      } else {
+        toast({
+          title: "Erro",
+          description: "Falha ao enviar imagem.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -101,16 +98,37 @@ export default function EditServicePage() {
       return;
     }
 
-    setIsLoading(true);
+    if (!id) return;
 
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const customFieldsObject = customFieldValues.reduce((acc, curr) => ({
+        ...acc,
+        [curr.fieldId]: curr.value
+      }), {});
+
+      await updateService.mutateAsync({
+        id,
+        data: {
+          name: formData.name,
+          description: formData.description,
+          price: parseFloat(formData.price),
+          customFields: customFieldsObject,
+          imageUrl: imageUrl
+        }
+      });
+
       toast({
         title: "Serviço atualizado!",
         description: `${formData.name} foi atualizado com sucesso.`,
       });
       navigate(`/servicos/${id}`);
-    }, 1000);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao atualizar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -121,11 +139,28 @@ export default function EditServicePage() {
         <form onSubmit={handleSubmit} className="space-y-5 animate-slide-up">
           {/* Image */}
           <div className="flex justify-center mb-6">
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleFileSelect}
+            />
             <button
               type="button"
-              className="w-24 h-24 rounded-xl bg-secondary border-2 border-dashed border-border flex items-center justify-center hover:border-primary/50 transition-colors"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-24 h-24 rounded-xl bg-secondary border-2 border-dashed border-border flex items-center justify-center hover:border-primary/50 transition-colors overflow-hidden relative"
             >
-              <Camera className="w-8 h-8 text-muted-foreground" />
+              {imageUrl ? (
+                <img src={imageUrl} alt="Service" className="w-full h-full object-cover" />
+              ) : (
+                <Camera className="w-8 h-8 text-muted-foreground" />
+              )}
+              {isUploading && (
+                <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
+                  <span className="text-xs font-bold">...</span>
+                </div>
+              )}
             </button>
           </div>
 
@@ -166,12 +201,18 @@ export default function EditServicePage() {
             />
           </div>
 
+          <CustomFieldsRenderer
+            entityType="service"
+            values={customFieldValues}
+            onValuesChange={setCustomFieldValues}
+          />
+
           <Button
             type="submit"
             className="w-full btn-primary mt-6"
-            disabled={isLoading}
+            disabled={updateService.isPending}
           >
-            {isLoading ? "Salvando..." : "Salvar"}
+            {updateService.isPending ? "Salvando..." : "Salvar"}
           </Button>
         </form>
       </div>

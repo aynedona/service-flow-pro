@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { TopNav } from "@/components/layout/TopNav";
 import { DesktopHeader } from "@/components/layout/DesktopHeader";
@@ -17,22 +17,44 @@ import {
   Moon,
   Sun,
   Save,
-  LogOut
+  LogOut,
+  Camera
 } from "lucide-react";
+import { useStorage } from "@/hooks/useStorage";
+import { useProfile } from "@/hooks/useProfile";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
-  const [isLoading, setIsLoading] = useState(false);
+  // Remove local isLoading state in favor of mutation status if desired, but keeping generally fine.
+  const [isSaving, setIsSaving] = useState(false);
+
+  const { uploadImage, isUploading } = useStorage();
+  const { profile, updateProfile } = useProfile();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isDarkMode = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
   const [userData, setUserData] = useState({
-    name: "Empresa Exemplo LTDA",
-    email: "contato@empresa.com",
-    phone: "(11) 99999-0000",
-    document: "12.345.678/0001-00",
+    name: "",
+    email: "",
+    phone: "",
+    document: "",
+    avatar_url: ""
   });
+
+  // Load profile data when available
+  useEffect(() => {
+    if (profile) {
+      setUserData({
+        name: profile.name || "",
+        email: profile.email || "",
+        phone: profile.phone || "",
+        document: profile.document || "",
+        avatar_url: profile.avatar_url || ""
+      });
+    }
+  }, [profile]);
 
   const toggleDarkMode = (enabled: boolean) => {
     setTheme(enabled ? "dark" : "light");
@@ -42,15 +64,60 @@ export default function SettingsPage() {
     setUserData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      try {
+        const url = await uploadImage(file, "app-images");
+        if (url) {
+          // Update local state immediately for preview
+          setUserData(prev => ({ ...prev, avatar_url: url }));
+
+          // Optionally save immediately or wait for Save button. 
+          // Let's force save the avatar immediately as it's a common pattern, 
+          // or just keep it in state until user clicks "Save".
+          // User asked why it's not saving, probably expecting Save button to do it.
+          // We will stick to the "Save" button pattern for consistency with other fields.
+
+          toast({
+            title: "Imagem carregada",
+            description: "Clique em Salvar para confirmar a alteração.",
+          });
+        }
+      } catch (error) {
+        toast({
+          title: "Erro",
+          description: "Falha ao enviar imagem.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await updateProfile.mutateAsync({
+        name: userData.name,
+        email: userData.email,
+        phone: userData.phone,
+        document: userData.document,
+        avatar_url: userData.avatar_url,
+      });
+
       toast({
         title: "Configurações salvas!",
         description: "Suas alterações foram salvas com sucesso.",
       });
-    }, 1000);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao salvar",
+        description: error.message || "Ocorreu um erro ao salvar as configurações.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleLogout = () => {
@@ -73,12 +140,39 @@ export default function SettingsPage() {
         {/* Profile Section */}
         <div className="card-elevated p-6 mb-6 animate-fade-in">
           <div className="flex items-center gap-4 mb-6">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="w-8 h-8 text-primary" />
+            <div className="relative">
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleFileSelect}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border-2 border-transparent hover:border-primary/50 transition-colors relative"
+              >
+                {userData.avatar_url ? (
+                  <img src={userData.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-8 h-8 text-primary" />
+                )}
+                {isUploading && (
+                  <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
+                    <span className="text-[10px] font-bold">...</span>
+                  </div>
+                )}
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-sm"
+              >
+                <Camera className="w-3 h-3" />
+              </button>
             </div>
             <div>
-              <h2 className="text-lg font-bold text-foreground">{userData.name}</h2>
-              <p className="text-sm text-muted-foreground">{userData.email}</p>
+              <h2 className="text-lg font-bold text-foreground">{userData.name || "Sua Empresa"}</h2>
+              <p className="text-sm text-muted-foreground">{userData.email || "email@exemplo.com"}</p>
             </div>
           </div>
 
@@ -93,6 +187,7 @@ export default function SettingsPage() {
                 value={userData.name}
                 onChange={(e) => updateField("name", e.target.value)}
                 className="input-field"
+                placeholder="Ex: Minha Empresa LTDA"
               />
             </div>
 
@@ -107,6 +202,7 @@ export default function SettingsPage() {
                 value={userData.email}
                 onChange={(e) => updateField("email", e.target.value)}
                 className="input-field"
+                placeholder="Ex: contato@minhaempresa.com"
               />
             </div>
 
@@ -121,6 +217,7 @@ export default function SettingsPage() {
                 value={userData.phone}
                 onChange={(e) => updateField("phone", e.target.value)}
                 className="input-field"
+                placeholder="Ex: (11) 99999-9999"
               />
             </div>
 
@@ -131,6 +228,7 @@ export default function SettingsPage() {
                 value={userData.document}
                 onChange={(e) => updateField("document", e.target.value)}
                 className="input-field"
+                placeholder="Ex: 00.000.000/0001-00"
               />
             </div>
           </div>
@@ -171,10 +269,10 @@ export default function SettingsPage() {
           <Button
             onClick={handleSave}
             className="w-full lg:w-auto btn-primary"
-            disabled={isLoading}
+            disabled={isSaving || isUploading}
           >
             <Save className="w-4 h-4 mr-2" />
-            {isLoading ? "Salvando..." : "Salvar Alterações"}
+            {isSaving ? "Salvando..." : "Salvar Alterações"}
           </Button>
 
           <Button

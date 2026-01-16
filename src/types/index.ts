@@ -20,6 +20,21 @@ export interface Client {
     birthDate: string;
     addresses: Address[];
     avatar?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    customFields?: Record<string, any>;
+}
+
+export interface Service {
+    id: string;
+    name: string;
+    description?: string;
+    price: number;
+    active?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+    customFields?: Record<string, any>;
+    imageUrl?: string;
 }
 
 export interface ServiceItem {
@@ -43,4 +58,7 @@ export interface ServiceOrder {
     description?: string;
     scheduledAt?: string;
     discount?: number;
+    number?: string;
+    customFields?: Record<string, any>;
+    imageUrl?: string;
 }

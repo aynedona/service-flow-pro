@@ -1,11 +1,13 @@
+import { forwardRef } from "react";
 import { ServiceOrder } from "@/types";
-import { Receipt, Smartphone, MapPin, Globe } from "lucide-react";
+import { Receipt, Smartphone } from "lucide-react";
 
 interface ServiceOrderPrintProps {
     order: ServiceOrder;
+    logoUrl?: string | null;
 }
 
-export function ServiceOrderPrint({ order }: ServiceOrderPrintProps) {
+export const ServiceOrderPrint = forwardRef<HTMLDivElement, ServiceOrderPrintProps>(({ order, logoUrl }, ref) => {
     const formatDate = (dateStr: string) => {
         return new Date(dateStr).toLocaleDateString("pt-BR", {
             day: "2-digit",
@@ -21,13 +23,19 @@ export function ServiceOrderPrint({ order }: ServiceOrderPrintProps) {
     };
 
     return (
-        <div className="w-[80mm] bg-white text-black p-4 font-mono text-base leading-tight mx-auto shadow-sm print:shadow-none print:w-full print:mx-0 print:p-0" style={{ printColorAdjust: "exact", WebkitPrintColorAdjust: "exact" }}>
+        <div ref={ref} className="w-[80mm] bg-white text-black p-4 font-mono text-base leading-tight mx-auto shadow-sm print:shadow-none print:w-full print:mx-0 print:p-0" style={{ printColorAdjust: "exact", WebkitPrintColorAdjust: "exact" }}>
             {/* Header */}
             <div className="text-center border-b-2 border-black pb-4 mb-4">
                 <div className="flex justify-center mb-2">
-                    <div className="w-12 h-12 bg-black text-white rounded-lg flex items-center justify-center">
-                        <Receipt className="w-6 h-6" />
-                    </div>
+                    {logoUrl ? (
+                        <div className="w-16 h-16 rounded-lg overflow-hidden flex items-center justify-center">
+                            <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                        </div>
+                    ) : (
+                        <div className="w-12 h-12 bg-black text-white rounded-lg flex items-center justify-center">
+                            <Receipt className="w-6 h-6" />
+                        </div>
+                    )}
                 </div>
                 <h1 className="font-extrabold text-xl uppercase">Lava Jato Jardim América LTDA</h1>
                 {/* <p className="text-sm font-bold">Soluções Rápidas e Eficientes</p> */}
@@ -106,4 +114,6 @@ export function ServiceOrderPrint({ order }: ServiceOrderPrintProps) {
             </div>
         </div>
     );
-}
+});
+
+ServiceOrderPrint.displayName = "ServiceOrderPrint";

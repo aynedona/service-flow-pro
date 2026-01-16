@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { formatPhone, formatDocument } from "@/lib/formatters";
 import { useNavigate, useParams } from "react-router-dom";
 import { TopNav } from "@/components/layout/TopNav";
@@ -9,42 +9,21 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { AddressManager } from "@/components/client/AddressManager";
 import { Client, Address } from "@/types";
+import { CustomFieldsRenderer, CustomFieldValue } from "@/components/form/CustomFieldsRenderer";
 
-const mockClients: Record<string, Client> = {
-  "1": {
-    id: "1",
-    name: "Maria Silva",
-    email: "maria@email.com",
-    phone: "(11) 99999-1111",
-    document: "123.456.789-00",
-    birthDate: "1985-03-15",
-    addresses: [
-      {
-        id: "1",
-        label: "Casa",
-        cep: "01310-100",
-        street: "Av. Paulista",
-        number: "1000",
-        complement: "Sala 501",
-        neighborhood: "Bela Vista",
-        city: "São Paulo",
-        state: "SP",
-        isDefault: true
-      }
-    ]
-  },
-  // ... mock data simplified
-  "2": { id: "2", name: "João Santos", email: "joao@email.com", phone: "(11) 99999-2222", document: "987.654.321-00", birthDate: "1990-07-20", addresses: [] },
-  "3": { id: "3", name: "Ana Oliveira", email: "ana@email.com", phone: "(11) 99999-3333", document: "456.789.123-00", birthDate: "1988-11-10", addresses: [] },
-  "4": { id: "4", name: "Carlos Mendes", email: "carlos@email.com", phone: "(11) 99999-4444", document: "789.123.456-00", birthDate: "1982-05-25", addresses: [] },
-  "5": { id: "5", name: "Paula Costa", email: "paula@email.com", phone: "(11) 99999-5555", document: "321.654.987-00", birthDate: "1995-09-08", addresses: [] },
-};
+import { useClients } from "@/hooks/useClients";
+import { useStorage } from "@/hooks/useStorage";
 
 export default function EditClientPage() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { clients, updateClient } = useClients();
+  const { uploadImage, isUploading } = useStorage();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const client = clients?.find(c => c.id === id);
+
   const [step, setStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -55,22 +34,30 @@ export default function EditClientPage() {
   });
 
   const [addresses, setAddresses] = useState<Address[]>([]);
+  const [customFieldValues, setCustomFieldValues] = useState<CustomFieldValue[]>([]);
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
 
   useEffect(() => {
-    if (id && mockClients[id]) {
-      const client = mockClients[id];
+    if (client) {
       setFormData({
         name: client.name,
-        email: client.email,
-        document: client.document,
-        birthDate: client.birthDate,
-        phone: client.phone,
+        email: client.email || "",
+        document: client.document || "",
+        birthDate: client.birthDate || "",
+        phone: client.phone || "",
       });
-      setAddresses(client.addresses);
-    }
-  }, [id]);
+      setAddresses(client.addresses || []);
+      setAvatarUrl(client.avatar || "");
 
-  const client = id ? mockClients[id] : null;
+      if (client.customFields) {
+        const values: CustomFieldValue[] = Object.entries(client.customFields).map(([key, value]) => ({
+          fieldId: key,
+          value: value as string | number | boolean
+        }));
+        setCustomFieldValues(values);
+      }
+    }
+  }, [client]);
 
   if (!client) {
     return (
@@ -89,12 +76,33 @@ export default function EditClientPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const url = await uploadImage(file, "app-images");
+      if (url) {
+        setAvatarUrl(url);
+        toast({
+          title: "Imagem enviada",
+          description: "Avatar atualizado com sucesso.",
+        });
+      } else {
+        toast({
+          title: "Erro",
+          description: "Falha ao enviar imagem.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   const handleNext = () => {
     if (!formData.name || !formData.email) {
       toast({
         title: "Campos obrigatórios",
         description: "Nome e email são obrigatórios.",
         variant: "destructive",
+        duration: 3000,
       });
       return;
     }
@@ -103,16 +111,40 @@ export default function EditClientPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    if (!id) return;
 
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const customFieldsObject = customFieldValues.reduce((acc, curr) => ({
+        ...acc,
+        [curr.fieldId]: curr.value
+      }), {});
+
+      await updateClient.mutateAsync({
+        id,
+        data: {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          document: formData.document,
+          birthDate: formData.birthDate,
+          addresses: addresses,
+          customFields: customFieldsObject,
+          avatar: avatarUrl
+        }
+      });
+
       toast({
         title: "Cliente atualizado!",
         description: `${formData.name} foi atualizado com sucesso.`,
       });
       navigate(`/clientes/${id}`);
-    }, 1000);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao atualizar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -134,11 +166,28 @@ export default function EditClientPage() {
             <div className="space-y-4 animate-slide-up">
               {/* Avatar */}
               <div className="flex justify-center mb-6">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                />
                 <button
                   type="button"
-                  className="w-24 h-24 rounded-full bg-secondary border-2 border-dashed border-border flex items-center justify-center hover:border-primary/50 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-24 h-24 rounded-full bg-secondary border-2 border-dashed border-border flex items-center justify-center hover:border-primary/50 transition-colors overflow-hidden relative"
                 >
-                  <Camera className="w-8 h-8 text-muted-foreground" />
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <Camera className="w-8 h-8 text-muted-foreground" />
+                  )}
+                  {isUploading && (
+                    <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
+                      <span className="text-xs font-bold">...</span>
+                    </div>
+                  )}
                 </button>
               </div>
 
@@ -202,6 +251,8 @@ export default function EditClientPage() {
                 />
               </div>
 
+              <CustomFieldsRenderer entityType="client" values={customFieldValues} onValuesChange={setCustomFieldValues} />
+
               <Button type="button" onClick={handleNext} className="w-full btn-primary mt-6">
                 Próximo
                 <ArrowRight className="w-4 h-4 ml-2" />
@@ -225,9 +276,9 @@ export default function EditClientPage() {
                 <Button
                   type="submit"
                   className="flex-1 btn-primary"
-                  disabled={isLoading}
+                  disabled={updateClient.isPending}
                 >
-                  {isLoading ? "Salvando..." : "Salvar"}
+                  {updateClient.isPending ? "Salvando..." : "Salvar"}
                 </Button>
               </div>
             </div>
